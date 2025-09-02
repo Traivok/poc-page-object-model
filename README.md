@@ -19,14 +19,23 @@ src/
 ├── config/                 # Configuration files
 │   ├── browser.config.ts   # Puppeteer browser configurations
 │   └── selectors.config.ts # Centralized CSS selectors
+├── models/                 # Base model classes
+│   ├── base.model.ts       # Abstract PageModel base class
+│   └── index.ts           # Model exports
+├── mixins/                 # Reusable functionality mixins
+│   ├── printable.mixin.ts  # PDF generation capabilities
+│   └── index.ts           # Mixin exports
 ├── pages/                  # Page Object Models
 │   ├── home.model.ts       # Yahoo Finance home page
 │   └── quotes/             # Quote-related pages
 │       └── subpage.model.ts # Quote sub-pages (news, history, etc.)
 ├── types/                  # TypeScript type definitions
-│   └── index.ts           # Common interfaces and types
+│   └── index.ts           # Domain-specific types and re-exports
+├── utils/                  # Utility functions
+│   └── index.ts           # Common utilities
 └── examples/              # Usage examples
-    └── yahoo-finance-scraper.ts # Complete scraping example
+    ├── yahoo-finance-scraper.ts # Complete scraping example
+    └── printable-example.ts     # Mixin usage examples
 ```
 
 ## 🏗️ Architecture Patterns
@@ -40,10 +49,16 @@ Each page is represented by a class that encapsulates:
 - **Error handling** with meaningful exceptions
 
 ```typescript
+import { PageModel, type PageModelConstructorArguments } from "../models";
+
 /**
  * Example Page Object Model implementation
  */
 export class YahooFinanceHomeModel extends PageModel {
+    constructor(args: PageModelConstructorArguments) {
+        super(args);
+    }
+
     /**
      * Validates if current page is the home page
      * @throws {Error} When page validation fails
@@ -61,6 +76,34 @@ export class YahooFinanceHomeModel extends PageModel {
         // Implementation with validation
     }
 }
+```
+
+### Mixin Pattern for Optional Functionality
+
+The project uses mixins to add optional capabilities without violating SOLID principles:
+
+```typescript
+import { PageModel, type PageModelConstructorArguments } from "../models";
+import { PrintableMixin, type Printable } from "../mixins";
+
+// Basic page model
+class ReportPageModel extends PageModel {
+    constructor(args: PageModelConstructorArguments) {
+        super(args);
+    }
+
+    async generateReport(): Promise<string> {
+        return "Report data";
+    }
+}
+
+// Add printable functionality using mixin
+const PrintableReportModel = PrintableMixin(ReportPageModel);
+
+// Usage
+const reportModel = new PrintableReportModel({ page });
+await reportModel.generateReport(); // Original functionality
+const pdf = await reportModel.printPage(); // Mixin functionality
 ```
 
 ### Configuration Management
@@ -130,6 +173,7 @@ npx tsx src/examples/yahoo-finance-scraper.ts
 ```typescript
 import puppeteer from 'puppeteer';
 import { YahooFinanceHomeModel } from './pages/home.model';
+import { YahooFinanceQuoteSummaryModel } from './pages/quotes/subpage.model';
 import { DEFAULT_BROWSER_CONFIG } from './config/browser.config';
 
 const browser = await puppeteer.launch(DEFAULT_BROWSER_CONFIG);
@@ -143,6 +187,13 @@ await homeModel.validatePage();
 
 // Navigate to a stock quote
 await homeModel.goToQuote('AAPL');
+
+// Create quote summary model and navigate to sub-pages
+const quoteSummaryModel = new YahooFinanceQuoteSummaryModel({ page });
+await quoteSummaryModel.validatePage();
+
+// Navigate to historical data using page model method
+const historicalDataModel = await quoteSummaryModel.openHistoricalData();
 ```
 
 ### Data Extraction
@@ -165,7 +216,46 @@ const data = await historicalModel.extractHistoricalData();
 console.log(data); // Array of HistoricalData objects
 ```
 
+### Using Mixins for Optional Functionality
+
+```typescript
+import { PageModel, type PageModelConstructorArguments } from "../models";
+import { PrintableMixin, type Printable } from "../mixins";
+
+// Create a printable page model
+class BasicPageModel extends PageModel {
+    constructor(args: PageModelConstructorArguments) {
+        super(args);
+    }
+    
+    async getTitle(): Promise<string> {
+        return this.page.title();
+    }
+}
+
+// Apply mixin to add print functionality
+const PrintablePageModel = PrintableMixin(BasicPageModel);
+
+// Usage with type safety
+const printableModel = new PrintablePageModel({ page });
+await printableModel.getTitle(); // Original functionality
+const pdf = await printableModel.printPage(); // Mixin functionality
+
+// Function that only accepts printable models
+function processPrintablePages(models: Printable[]) {
+    // Type-safe usage of printPage method
+}
+```
+
 ## 🛠️ Development Standards
+
+### Code Organization
+
+- **`/src/models/`**: Base classes and abstract models
+- **`/src/mixins/`**: Reusable functionality that can be composed
+- **`/src/pages/`**: Concrete page object implementations
+- **`/src/types/`**: Type definitions and interfaces
+- **`/src/config/`**: Configuration files and constants
 
 ### JSDoc Documentation
 
@@ -182,6 +272,7 @@ All public methods must include:
 - **Explicit return types** for all public methods
 - **Input validation** for all parameters
 - **Null safety** with proper type guards
+- **Modular imports** from organized folders
 
 ### Error Handling
 

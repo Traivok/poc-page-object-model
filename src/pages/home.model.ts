@@ -1,11 +1,5 @@
 import { Page } from "puppeteer";
-/**
- * Yahoo Finance Home Page Model
- * @description Page Object Model for Yahoo Finance home page interactions
- * @extends PageModel
- */
-
-import { PageModel, type PageModelConstructorArguments } from "../types";
+import { PageModel, type PageModelConstructorArguments } from "../models";
 import { YAHOO_FINANCE_SELECTORS } from "../config/selectors.config";
 
 /**

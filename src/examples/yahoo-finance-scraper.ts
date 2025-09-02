@@ -6,7 +6,7 @@
 
 import puppeteer from 'puppeteer';
 import { YahooFinanceHomeModel } from '../pages/home.model';
-import { HistoricalDataModel } from '../pages/quotes/subpage.model';
+import { HistoricalDataModel, YahooFinanceQuoteSummaryModel } from '../pages/quotes/subpage.model';
 import { DEFAULT_BROWSER_CONFIG } from '../config/browser.config';
 
 /**
@@ -30,14 +30,12 @@ async function main(): Promise<void> {
         // Search for AAPL stock
         await homeModel.goToQuote('AAPL');
         
-        // Navigate to historical data page
-        await page.goto(`https://finance.yahoo.com/quote/AAPL/history`, { 
-            waitUntil: 'domcontentloaded',
-            timeout: 30000 
-        });
+        // Create quote summary model and navigate to historical data
+        const quoteSummaryModel = new YahooFinanceQuoteSummaryModel({ page });
+        await quoteSummaryModel.validatePage();
         
-        // Create historical data model and validate
-        const historicalDataModel = new HistoricalDataModel({ page });
+        // Navigate to historical data page using page model method
+        const historicalDataModel = await quoteSummaryModel.openHistoricalData();
         await historicalDataModel.validatePage();
         
         // Configure date range and frequency

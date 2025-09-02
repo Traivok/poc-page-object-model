@@ -4,7 +4,7 @@
  * @author RPA Team
  */
 
-import { PageModel, type PageModelConstructorArguments } from "../../types";
+import { PageModel, type PageModelConstructorArguments } from "../../models";
 import { YAHOO_FINANCE_SELECTORS } from "../../config/selectors.config";
 
 /**
