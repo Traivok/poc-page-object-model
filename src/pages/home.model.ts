@@ -82,11 +82,21 @@ export class YahooFinanceHomeModel extends PageModel {
             
             // Press Enter to search
             console.log('[YahooFinanceHomeModel] Pressing Enter to search...');
-            await this.page.keyboard.press('Enter');
+            await Promise.all([
+                this.page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 10000 }).catch(() => {
+                    // Navigation might not trigger a full page reload, that's okay
+                    console.log('[YahooFinanceHomeModel] No full navigation detected, checking URL change...');
+                }),
+                this.page.keyboard.press('Enter')
+            ]);
             
-            // Wait for navigation to complete
-            console.log('[YahooFinanceHomeModel] Waiting for navigation to complete...');
-            await this.page.waitForNavigation({ waitUntil: 'networkidle0' });
+            // Wait for URL to change to quote page
+            console.log('[YahooFinanceHomeModel] Waiting for URL to change...');
+            await this.page.waitForFunction(
+                (expectedSymbol) => window.location.href.includes(`/quote/${expectedSymbol}`),
+                { timeout: 15000 },
+                symbol
+            );
             
             const finalUrl = this.page.url();
             console.log('[YahooFinanceHomeModel] Navigation completed. Final URL:', finalUrl);

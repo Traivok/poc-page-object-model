@@ -20,14 +20,23 @@ async function main(): Promise<void> {
     
     try {
         // Navigate to Yahoo Finance home page
-        await page.goto('https://finance.yahoo.com/');
+        await page.goto('https://finance.yahoo.com/', { 
+            waitUntil: 'domcontentloaded',
+            timeout: 60000 
+        });
         const homeModel = new YahooFinanceHomeModel({ page });
         await homeModel.validatePage();
 
         // Search for AAPL stock
         await homeModel.goToQuote('AAPL');
         
-        // Navigate to historical data and extract information
+        // Navigate to historical data page
+        await page.goto(`https://finance.yahoo.com/quote/AAPL/history`, { 
+            waitUntil: 'domcontentloaded',
+            timeout: 30000 
+        });
+        
+        // Create historical data model and validate
         const historicalDataModel = new HistoricalDataModel({ page });
         await historicalDataModel.validatePage();
         
