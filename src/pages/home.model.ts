@@ -11,7 +11,7 @@ export class YahooFinanceHomeModel extends PageModel {
      * Creates an instance of YahooFinanceHomeModel
      * @param {PageModelConstructorArguments} args - Constructor arguments containing page instance
      */
-    constructor(args: PageModelConstructorArguments) {
+    constructor(args: PageModelConstructorArguments = {}) {
         super(args);
     }
 

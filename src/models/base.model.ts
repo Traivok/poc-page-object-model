@@ -1,7 +1,7 @@
-import type { Page } from "puppeteer";
+import type { Page, Browser } from "puppeteer";
+import puppeteer from "puppeteer";
 
 export type PageModelConstructorArguments = {
-    page: Page;
     timeout?: number;
 } | {
     model: PageModel;
@@ -9,27 +9,45 @@ export type PageModelConstructorArguments = {
 }
 
 export abstract class PageModel {
-    _page: Page;
+    protected _page: Page | null = null;
+    protected _timeout?: number;
 
-    constructor(args: PageModelConstructorArguments) {
-        if ('page' in args) {
-            this._page = args.page;
-        } else if ('model' in args) {
-            this._page = args.model.page;
-        } else {
-            throw new Error("PageModel constructor arguments are not valid");
+    constructor(args: PageModelConstructorArguments = {}) {
+        if ('timeout' in args) {
+            this._timeout = args.timeout;
         }
 
-        if (args.timeout) {
-            this._page.setDefaultTimeout(args.timeout);
+        if ('model' in args) {
+            this._page = args.model.page;
         }
     }
 
     get page(): Page {
+        if (!this._page) {
+            throw new Error("Page not initialized. Call init() first.");
+        }
         return this._page;
     }
 
+    public async init(): Promise<void> {
+        if (this._page) {
+            throw new Error("Page already initialized");
+        }
+
+        const newBrowser = await puppeteer.launch({ headless: false });
+        const pages = await newBrowser.pages();
+        const newPage = pages[0] || (await newBrowser.newPage());
+        this._page = newPage;
+        
+        if (this._timeout) {
+            this._page.setDefaultTimeout(this._timeout);
+        }
+    }
+
     public async isInPage(): Promise<boolean> {
+        if (!this._page) {
+            throw new Error("Page not initialized. Call init() first.");
+        }
         return true;
     }
 
@@ -37,6 +55,13 @@ export abstract class PageModel {
         const isValid = await this.isInPage();
         if (!isValid) {
             throw new Error("Page is not valid");
+        }
+    }
+
+    public async close(): Promise<void> {
+        if (this._page) {
+            await this._page.close();
+            this._page = null;
         }
     }
 }

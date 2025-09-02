@@ -1,4 +1,3 @@
-import { Page } from "puppeteer";
 import { PageModel, type PageModelConstructorArguments } from "../models";
 import { PrintableMixin, type Printable } from "../mixins";
 
@@ -6,12 +5,25 @@ import { PrintableMixin, type Printable } from "../mixins";
  * Example: Basic page model without print functionality
  */
 class BasicPageModel extends PageModel {
-    constructor(args: PageModelConstructorArguments) {
+    constructor(args: PageModelConstructorArguments = {}) {
         super(args);
     }
 
     async getTitle(): Promise<string> {
         return this.page.title();
+    }
+}
+
+/**
+ * Example: Custom page model for demonstration
+ */
+class CustomPageModel extends PageModel {
+    constructor(args: PageModelConstructorArguments = {}) {
+        super(args);
+    }
+
+    async getContent(): Promise<string> {
+        return this.page.content();
     }
 }
 
@@ -23,34 +35,40 @@ const PrintablePageModel = PrintableMixin(BasicPageModel);
 /**
  * Example: Usage demonstrating type safety
  */
-export async function demonstrateDecoratorUsage(page: Page) {
-    // Basic model - no print functionality
-    const basicModel = new BasicPageModel({ page });
-    const title = await basicModel.getTitle();
-    console.log('Page title:', title);
-    
-    // This would cause a TypeScript error:
-    // basicModel.printPage(); // ❌ Property 'printPage' does not exist
-    
-    // Printable model - has both basic and print functionality
-    const printableModel = new PrintablePageModel({ page });
-    const printableTitle = await printableModel.getTitle(); // ✅ Basic functionality
-    const pdfBuffer = await printableModel.printPage(); // ✅ Print functionality
-    
-    console.log('Printable page title:', printableTitle);
-    console.log('PDF generated, size:', pdfBuffer.length, 'bytes');
-    
-    // Type safety: printableModel implements both PageModel and Printable
-    const isPrintable: Printable = printableModel; // ✅ Type-safe assignment
-    
-    return { basicModel, printableModel, pdfBuffer };
+export async function main(): Promise<void> {
+    try {
+        // Example 1: Basic usage with mixin
+        const basicModel = new (PrintableMixin(BasicPageModel))({});
+        await basicModel.init();
+        await basicModel.page.goto('https://example.com');
+        await basicModel.validatePage();
+        
+        console.log('Generating PDF...');
+        const pdfBuffer = await basicModel.printPage();
+        console.log(`PDF generated: ${pdfBuffer.length} bytes`);
+        
+        // Example 2: Custom page model with mixin (sharing same page)
+        const customModel = new (PrintableMixin(CustomPageModel))({ model: basicModel });
+        await customModel.page.goto('https://httpbin.org/html');
+        await customModel.validatePage();
+        
+        console.log('Generating custom PDF...');
+        const customPdfBuffer = await customModel.printPage();
+        console.log(`Custom PDF generated: ${customPdfBuffer.length} bytes`);
+        
+        // Clean up
+        await basicModel.close();
+        
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
 
 /**
  * Example: Creating a specialized printable page model
  */
 class ReportPageModel extends PageModel {
-    constructor(args: PageModelConstructorArguments) {
+    constructor(args: PageModelConstructorArguments = {}) {
         super(args);
     }
 
@@ -61,18 +79,23 @@ class ReportPageModel extends PageModel {
 }
 
 // Create printable version of ReportPageModel
-const PrintableReportPageModel = withPrintable(ReportPageModel);
+const PrintableReportPageModel = PrintableMixin(ReportPageModel);
 
-export async function demonstrateSpecializedPrintable(page: Page) {
-    const reportModel = new PrintableReportPageModel({ page });
+export async function demonstrateSpecializedPrintable() {
+    const reportModel = new PrintableReportPageModel({});
+    await reportModel.init();
+    
+    // Navigate to a page for demonstration
+    await reportModel.page.goto('https://example.com');
     
     // Has both report functionality and print functionality
     const reportData = await reportModel.generateReport(); // ✅ Original functionality
-    const pdfReport = await reportModel.printPage(); // ✅ Decorated functionality
+    const pdfReport = await reportModel.printPage(); // ✅ Mixin functionality
     
     console.log('Report:', reportData);
     console.log('PDF report size:', pdfReport.length, 'bytes');
     
+    await reportModel.close();
     return { reportData, pdfReport };
 }
 

@@ -15,23 +15,23 @@ import { DEFAULT_BROWSER_CONFIG } from '../config/browser.config';
  * @throws {Error} When browser launch fails or page navigation errors occur
  */
 async function main(): Promise<void> {
-    const browser = await puppeteer.launch(DEFAULT_BROWSER_CONFIG);
-    const page = await browser.newPage();
-    
     try {
+        // Initialize home model with new pattern
+        const homeModel = new YahooFinanceHomeModel({});
+        await homeModel.init();
+        
         // Navigate to Yahoo Finance home page
-        await page.goto('https://finance.yahoo.com/', { 
+        await homeModel.page.goto('https://finance.yahoo.com/', { 
             waitUntil: 'domcontentloaded',
             timeout: 60000 
         });
-        const homeModel = new YahooFinanceHomeModel({ page });
         await homeModel.validatePage();
 
         // Search for AAPL stock
         await homeModel.goToQuote('AAPL');
         
-        // Create quote summary model and navigate to historical data
-        const quoteSummaryModel = new YahooFinanceQuoteSummaryModel({ page });
+        // Create quote summary model sharing the same page
+        const quoteSummaryModel = new YahooFinanceQuoteSummaryModel({ model: homeModel });
         await quoteSummaryModel.validatePage();
         
         // Navigate to historical data page using page model method
@@ -46,11 +46,12 @@ async function main(): Promise<void> {
         const historicalData = await historicalDataModel.extractHistoricalData();
         console.log(historicalData);
         
+        // Clean up
+        await homeModel.close();
+        
     } catch (error) {
         console.error('Scraping failed:', error);
         throw error;
-    } finally {
-        await browser.close();
     }
 }
 

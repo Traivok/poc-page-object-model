@@ -53,22 +53,22 @@ export abstract class YahooFinanceQuoteSubPageModel extends PageModel {
 
     public async openSummary(): Promise<YahooFinanceQuoteSummaryModel> {
         await this.goToSubPage('summary');
-        return new YahooFinanceQuoteSummaryModel({ page: this.page });
+        return new YahooFinanceQuoteSummaryModel({ model: this });
     }
 
     public async openNews(): Promise<YahooFinanceQuoteNewsModel> {
         await this.goToSubPage('news');
-        return new YahooFinanceQuoteNewsModel({ page: this.page });
+        return new YahooFinanceQuoteNewsModel({ model: this });
     }
 
     public async openCharts(): Promise<YahooFinanceQuoteChartsModel> {
         await this.goToSubPage('chart');
-        return new YahooFinanceQuoteChartsModel({ page: this.page });
+        return new YahooFinanceQuoteChartsModel({ model: this });
     }
 
     public async openHistoricalData(): Promise<HistoricalDataModel> {
         await this.goToSubPage('history');
-        return new HistoricalDataModel({ page: this.page });
+        return new HistoricalDataModel({ model: this });
     }
 
     private async goToSubPage(category: 'summary' | 'news' | 'chart' | 'history'): Promise<void> {
