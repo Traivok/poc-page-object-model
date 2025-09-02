@@ -1,25 +1,54 @@
-import { PageModel, type PageModelConstructorArguments } from "../../types";
+/**
+ * Yahoo Finance Quote Sub-Page Models
+ * @description Page Object Models for Yahoo Finance quote-related pages (news, charts, historical data)
+ * @author RPA Team
+ */
 
+import { PageModel, type PageModelConstructorArguments } from "../../types";
+import { YAHOO_FINANCE_SELECTORS } from "../../config/selectors.config";
+
+/**
+ * Abstract base class for Yahoo Finance quote sub-pages
+ * @description Provides common functionality for all quote-related sub-pages
+ * @abstract
+ * @extends PageModel
+ */
 export abstract class YahooFinanceQuoteSubPageModel extends PageModel {
+    /** URL pattern that validates the specific sub-page */
     protected abstract urlPattern: RegExp;
 
+    /**
+     * Creates an instance of YahooFinanceQuoteSubPageModel
+     * @param {PageModelConstructorArguments} args - Constructor arguments containing page instance
+     */
     constructor(args: PageModelConstructorArguments) {
         super(args);
     }
 
+    /**
+     * Validates if the current page matches the expected quote sub-page
+     * @description Checks for quote lookup element and validates URL pattern
+     * @returns {Promise<boolean>} True if on the correct quote sub-page, false otherwise
+     * @throws {Error} When page validation fails due to network or DOM issues
+     */
     public override async isInPage(): Promise<boolean> {
         console.log('[YahooFinanceQuoteSubPageModel] Checking if in page...');
         
-        // requisito comum a todas as páginas de quote
-        const hasQuoteLookup = await this.page.$('input[aria-label="Quote Lookup"]');
-        console.log('[YahooFinanceQuoteSubPageModel] Quote lookup element found:', !!hasQuoteLookup);
-        if (!hasQuoteLookup) return false;
+        try {
+            // Common requirement for all quote pages - presence of quote lookup
+            const hasQuoteLookup = await this.page.$(YAHOO_FINANCE_SELECTORS.QUOTE.QUOTE_LOOKUP_INPUT);
+            console.log('[YahooFinanceQuoteSubPageModel] Quote lookup element found:', !!hasQuoteLookup);
+            if (!hasQuoteLookup) return false;
 
-        // valida a URL pelo padrão definido na subclasse
-        const url = this.page.url();
-        const isValidUrl = this.urlPattern.test(url);
-        console.log('[YahooFinanceQuoteSubPageModel] URL validation:', { url, pattern: this.urlPattern.toString(), isValid: isValidUrl });
-        return isValidUrl;
+            // Validate URL against the pattern defined in the subclass
+            const url = this.page.url();
+            const isValidUrl = this.urlPattern.test(url);
+            console.log('[YahooFinanceQuoteSubPageModel] URL validation:', { url, pattern: this.urlPattern.toString(), isValid: isValidUrl });
+            return isValidUrl;
+        } catch (error) {
+            console.error('[YahooFinanceQuoteSubPageModel] Page validation failed:', error);
+            throw new Error(`Failed to validate quote sub-page: ${error}`);
+        }
     }
 
     public async openSummary(): Promise<YahooFinanceQuoteSummaryModel> {

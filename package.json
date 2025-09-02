@@ -1,9 +1,18 @@
 {
     "name": "poc-page-object-model",
+    "version": "1.0.0",
+    "description": "Page Object Model POC for RPA Standards using TypeScript and Puppeteer",
     "type": "module",
-    "strict": true,
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "main": "src/examples/yahoo-finance-scraper.ts",
+    "scripts": {
+        "start": "npx tsx src/examples/yahoo-finance-scraper.ts",
+        "dev": "npx tsx src/examples/yahoo-finance-scraper.ts",
+        "build": "tsc",
+        "lint": "tsc --noEmit"
+    },
+    "keywords": ["rpa", "page-object-model", "puppeteer", "typescript", "automation"],
+    "author": "RPA Team",
+    "license": "MIT",
     "devDependencies": {
         "@types/node": "^24.3.0",
         "typescript": "^5.9.2"
